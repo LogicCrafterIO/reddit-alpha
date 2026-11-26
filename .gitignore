@@ -1,0 +1,19 @@
+# the store itself — never committed (the workspace copy is ~950 MB)
+data/
+*.db
+*.db-wal
+*.db-shm
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+
+# local secrets (the workspace keeps one .env at the repo parent; never ship it)
+.env
+.env.*
+
+# scratch and exports
+.dsh/tmp/
+*.log
+.DS_Store

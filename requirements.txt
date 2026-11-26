@@ -1,0 +1,12 @@
+# third-party runtime dependencies
+fastapi>=0.115
+uvicorn>=0.30
+pyyaml>=6.0
+numpy>=1.26
+
+# the semantic leg: vectors and the static embedder
+model2vec>=0.10
+
+# optional: TLS impersonation for the archive adapter (sources.py degrades to
+# urllib without it, which the archive often refuses)
+curl_cffi>=0.7

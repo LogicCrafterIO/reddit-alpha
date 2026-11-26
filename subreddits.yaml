@@ -1,0 +1,283 @@
+# reddit-alpha — the subreddit registry, as shipped.
+#
+# This file is the SEED and the EXPORT FORMAT. The database table `subreddit` is
+# the source of truth at runtime; nothing reads this file on a crawl. Edit it,
+# then run `rdx.py subs import` to merge it in. `rdx.py subs export` writes the
+# current registry back out to this path, so the two never really drift — you
+# can edit either one.
+#
+#   name    the subreddit, without r/        (case-insensitive)
+#   theme   used for filtering, clustering and the UI's groupings
+#   weight  0.2 – 1.5; how much this sub counts when candidates are ranked
+#   enabled false keeps the entry (and its history) but stops crawling it
+#   note    why it is here, or why it is off
+#
+# Every name below was probed against the archive on 2026-11-22 (newest post
+# seen, UTC) before being enabled. Entries that came back dormant or absent are
+# kept and switched off with the date in the note, so the list is honest about
+# what it cannot get rather than quietly returning nothing.
+
+version: 1
+subreddits:
+  # ---------------------------------------------------------------- retail flow
+  - name: wallstreetbets
+    theme: retail_trading
+    weight: 1.5
+    note: "biggest flow; the DD threads are the good ones, most of the rest is noise"
+  - name: options
+    theme: options
+    weight: 1.3
+    note: "greek-level discussion of positioning, often specific and falsifiable"
+  - name: thetagang
+    theme: options
+    weight: 1.1
+    note: "premium sellers; useful for what the other side of a crowded trade thinks"
+  - name: Daytrading
+    theme: retail_trading
+    weight: 1.0
+  - name: SwingTrading
+    theme: retail_trading
+    weight: 1.0
+  - name: smallstreetbets
+    theme: retail_trading
+    weight: 0.8
+  - name: Wallstreetbetsnew
+    theme: retail_trading
+    weight: 0.7
+  - name: wallstreetbetsELITE
+    theme: retail_trading
+    weight: 0.7
+  - name: wallstreetbetsOGs
+    theme: retail_trading
+    weight: 0.6
+  - name: WSBAfterHours
+    theme: retail_trading
+    weight: 0.6
+  - name: unusual_whales
+    theme: retail_trading
+    weight: 1.0
+    note: "flow watchers, posts specific option prints with sources"
+  - name: pennystocks
+    theme: retail_trading
+    weight: 0.6
+    note: "pump risk high; kept at low weight"
+  - name: shortsqueeze
+    theme: retail_trading
+    weight: 0.6
+  - name: Superstonk
+    theme: retail_trading
+    weight: 0.5
+    note: "single-name obsession; useful only as a crowd-positioning read"
+  - name: EducatedInvesting
+    theme: retail_trading
+    weight: 0.7
+  - name: Vitards
+    theme: retail_trading
+    weight: 0.6
+  - name: RealDayTrading
+    theme: retail_trading
+    weight: 0.8
+  - name: algotrading
+    theme: quant
+    weight: 0.8
+  - name: quant
+    theme: quant
+    weight: 0.9
+    note: "higher signal on methodology; posts are often links to papers"
+  - name: sidestreetbets
+    theme: retail_trading
+    weight: 0.5
+    enabled: false
+    note: "requested; archive's newest post is ~135 days old (2026-11-22) — dormant"
+  - name: blackstreetbets
+    theme: retail_trading
+    weight: 0.5
+    enabled: false
+    note: "requested; absent from the archive under every case variant (2026-11-22). Add REDDIT_CLIENT_ID/SECRET and crawl with `--source oauth` to settle it"
+  - name: blackwallstreet
+    theme: retail_trading
+    weight: 0.4
+    enabled: false
+    note: "nearest archived name to blackstreetbets; newest post ~18 weeks old — dormant"
+
+  # ------------------------------------------------------------ value & long only
+  - name: investing
+    theme: value_investing
+    weight: 1.4
+  - name: stocks
+    theme: value_investing
+    weight: 1.4
+  - name: StockMarket
+    theme: value_investing
+    weight: 1.2
+  - name: ValueInvesting
+    theme: value_investing
+    weight: 1.2
+  - name: SecurityAnalysis
+    theme: value_investing
+    weight: 1.1
+    note: "low volume, high substance; the closest thing to a research note on Reddit"
+  - name: investing_discussion
+    theme: value_investing
+    weight: 0.9
+  - name: dividends
+    theme: value_investing
+    weight: 0.8
+  - name: Bogleheads
+    theme: value_investing
+    weight: 0.6
+  - name: ETFs
+    theme: value_investing
+    weight: 0.7
+  - name: weedstocks
+    theme: value_investing
+    weight: 0.4
+  - name: SPACs
+    theme: value_investing
+    weight: 0.4
+
+  # --------------------------------------------------------------- AI & semiconductors
+  - name: AIBubble
+    theme: ai_semis
+    weight: 1.5
+    note: "requested; small but unusually argumentative — capex and revenue claims with numbers"
+  - name: singularity
+    theme: ai_semis
+    weight: 0.8
+    note: "capability timelines; useful for the demand side of the AI trade"
+  - name: artificial
+    theme: ai_semis
+    weight: 0.7
+  - name: MachineLearning
+    theme: ai_semis
+    weight: 0.7
+  - name: LocalLLaMA
+    theme: ai_semis
+    weight: 0.9
+    note: "what compute people actually run; a demand read no analyst tour gives"
+  - name: OpenAI
+    theme: ai_semis
+    weight: 0.7
+  - name: ChatGPT
+    theme: ai_semis
+    weight: 0.5
+  - name: semiconductors
+    theme: ai_semis
+    weight: 0.9
+  - name: nvidia
+    theme: ai_semis
+    weight: 0.8
+  - name: NVDA_Stock
+    theme: ai_semis
+    weight: 0.8
+  - name: AMD_Stock
+    theme: ai_semis
+    weight: 0.7
+  - name: PLTR
+    theme: ai_semis
+    weight: 0.6
+  - name: teslainvestorsclub
+    theme: tech_software
+    weight: 0.6
+  - name: technology
+    theme: tech_software
+    weight: 0.8
+
+  # ------------------------------------------------------------------- defence
+  - name: CredibleDefense
+    theme: defence
+    weight: 1.2
+    note: "sourcing discipline; the best read on procurement and programme risk"
+  - name: WarCollege
+    theme: defence
+    weight: 1.0
+    note: "doctrine and industrial base rather than tickers; feeds the mechanism"
+  - name: LessCredibleDefence
+    theme: defence
+    weight: 0.6
+  - name: defence
+    theme: defence
+    weight: 0.4
+    enabled: false
+    note: "requested; newest archived post is ~5 years old (2026-11-22) — dormant"
+
+  # ------------------------------------------------------------- macro & commodities
+  - name: economics
+    theme: macro_rates
+    weight: 1.0
+  - name: geopolitics
+    theme: macro_rates
+    weight: 1.0
+  - name: energy
+    theme: energy_commodities
+    weight: 0.8
+  - name: commodities
+    theme: energy_commodities
+    weight: 0.8
+  - name: uranium
+    theme: energy_commodities
+    weight: 0.6
+  - name: gold
+    theme: energy_commodities
+    weight: 0.6
+  - name: silver
+    theme: energy_commodities
+    weight: 0.5
+
+  # ------------------------------------------------------------------- health
+  - name: healthcare
+    theme: healthcare
+    weight: 0.6
+  - name: biotech
+    theme: healthcare
+    weight: 0.8
+    note: "trial catalysts and FDA dates, often before the wires carry them"
+  - name: Biotechplays
+    theme: healthcare
+    weight: 0.6
+
+  # -------------------------------------------------------------------- crypto
+  - name: CryptoCurrency
+    theme: crypto
+    weight: 0.7
+  - name: Bitcoin
+    theme: crypto
+    weight: 0.6
+  - name: ethereum
+    theme: crypto
+    weight: 0.6
+
+  # ------------------------------------------------------------------- china / EM
+  - name: ChinaStocks
+    theme: china_em
+    weight: 0.7
+  - name: baba
+    theme: china_em
+    weight: 0.4
+  - name: InvestingChina
+    theme: china_em
+    weight: 0.4
+
+  # ------------------------------------------------------- regional retail boards
+  - name: mauerstrassenwetten
+    theme: retail_trading
+    weight: 0.5
+    note: "German WSB; different names, same mechanics"
+  - name: Finanzen
+    theme: retail_trading
+    weight: 0.4
+  - name: ASX_Bets
+    theme: retail_trading
+    weight: 0.5
+  - name: Baystreetbets
+    theme: retail_trading
+    weight: 0.4
+  - name: CanadianInvestor
+    theme: value_investing
+    weight: 0.5
+  - name: UKInvesting
+    theme: value_investing
+    weight: 0.5
+  - name: stonks
+    theme: retail_trading
+    weight: 0.3

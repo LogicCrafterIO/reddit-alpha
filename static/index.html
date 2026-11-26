@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>reddit-alpha</title>
+<style>
+  :root{
+    --bg:#0d1117; --bg2:#131a23; --bg3:#1a222d; --line:#252f3d; --line2:#324153;
+    --fg:#d7e0ea; --dim:#8695a8; --dimmer:#5d6b7d;
+    --green:#3fb950; --red:#f85149; --amber:#d29922; --blue:#58a6ff; --violet:#bc8cff;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+       font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+  header{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;
+         padding:14px 20px;border-bottom:1px solid var(--line);background:var(--bg2);
+         position:sticky;top:0;z-index:20}
+  header h1{font-size:16px;margin:0;letter-spacing:.4px}
+  header h1 span{color:var(--dimmer);font-weight:400}
+  #hdr-stats{color:var(--dim);font-family:var(--mono);font-size:12px;display:flex;gap:14px;flex-wrap:wrap}
+  #hdr-stats b{color:var(--fg);font-weight:600}
+  nav{display:flex;gap:2px;padding:0 12px;background:var(--bg2);border-bottom:1px solid var(--line);
+      position:sticky;top:53px;z-index:19;overflow-x:auto}
+  nav button{background:none;border:0;border-bottom:2px solid transparent;color:var(--dim);
+             padding:10px 14px;cursor:pointer;font-size:13px;white-space:nowrap}
+  nav button:hover{color:var(--fg)}
+  nav button.on{color:var(--fg);border-bottom-color:var(--blue)}
+  main{padding:18px 20px 90px;max-width:1500px}
+  .panel{display:none}
+  .panel.on{display:block}
+  .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  select,input,button,textarea{background:var(--bg3);color:var(--fg);border:1px solid var(--line2);
+      border-radius:6px;padding:6px 9px;font-size:13px;font-family:inherit}
+  input[type=text],input[type=search],textarea{min-width:180px}
+  button{cursor:pointer}
+  button:hover{border-color:var(--blue)}
+  button.primary{background:#1f6feb;border-color:#1f6feb;color:#fff}
+  button.primary:hover{background:#2b7cf0}
+  button:disabled{opacity:.45;cursor:default}
+  .muted{color:var(--dim)}
+  .tiny{font-size:11.5px}
+  .mono{font-family:var(--mono)}
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--dim);font-weight:500;font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+  tr:hover td{background:#121a24}
+  .card{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:12px;
+        background:var(--bg2)}
+  .card:hover{border-color:var(--line2)}
+  .star{background:none;border:0;color:var(--dim);font-size:15px;line-height:1;padding:0 2px;
+    cursor:pointer}
+  .star.on{color:#e3c04a}
+  .star:hover{color:#e3c04a}
+  .card h3{margin:0 0 6px;font-size:15px;line-height:1.35}
+  .pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;
+        font-family:var(--mono);border:1px solid var(--line2);color:var(--dim)}
+  .pill.long{color:var(--green);border-color:#1f4d2b;background:#0f2016}
+  .pill.short{color:var(--red);border-color:#5a1f1f;background:#200f0f}
+  .pill.watch{color:var(--amber);border-color:#4d3a12;background:#1d1a0c}
+  .pill.avoid{color:var(--violet);border-color:#3b2a56;background:#181226}
+  .chip{display:inline-block;background:var(--bg3);border:1px solid var(--line);border-radius:5px;
+        padding:0 6px;font-family:var(--mono);font-size:11.5px;color:var(--dim);margin-right:4px}
+  .row{display:flex;gap:16px;align-items:baseline}
+  .excerpt{color:#a9b6c6;margin-top:5px;font-size:13px}
+  .grow{flex:1}
+  .num{font-family:var(--mono);font-size:12.5px;color:var(--dim);white-space:nowrap}
+  .num b{color:var(--fg)}
+  .up{color:var(--green)} .down{color:var(--red)} .new{color:var(--amber)}
+  .bar-bg{background:var(--bg3);border-radius:3px;height:6px;overflow:hidden;width:110px;display:inline-block}
+  .bar-fg{height:100%;background:var(--blue)}
+  aside#drawer{position:fixed;top:0;right:0;width:min(760px,96vw);height:100vh;background:var(--bg2);
+       border-left:1px solid var(--line2);transform:translateX(101%);transition:transform .18s ease;
+       z-index:50;display:flex;flex-direction:column}
+  aside#drawer.on{transform:none;box-shadow:-20px 0 50px rgba(0,0,0,.5)}
+  #drawer-head{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center}
+  #drawer-body{overflow:auto;padding:16px}
+  pre{white-space:pre-wrap;word-break:break-word;font-family:var(--mono);font-size:12px;
+      background:#0a0f16;border:1px solid var(--line);border-radius:8px;padding:10px;margin:8px 0}
+  .comment{border-left:2px solid var(--line2);padding:6px 0 6px 12px;margin:8px 0}
+  .comment .who{font-family:var(--mono);font-size:11.5px;color:var(--dim)}
+  .comment .body{white-space:pre-wrap;margin-top:3px}
+  #jobbar{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--line2);
+          max-height:190px;overflow:auto;padding:8px 16px;font-family:var(--mono);font-size:11.5px;
+          color:var(--dim);display:none;z-index:40}
+  #jobbar.on{display:block}
+  #jobbar .hdr{color:var(--fg);margin-bottom:4px}
+  .err{color:var(--red)}
+  .ok{color:var(--green)}
+  .warn{color:var(--amber)}
+  .kpis{display:flex;gap:22px;flex-wrap:wrap;margin-bottom:16px}
+  .kpi{border:1px solid var(--line);border-radius:8px;padding:10px 14px;background:var(--bg2);min-width:120px}
+  .kpi .v{font-family:var(--mono);font-size:19px}
+  .kpi .l{color:var(--dim);font-size:11.5px;text-transform:uppercase;letter-spacing:.4px}
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:900px){.split{grid-template-columns:1fr}}
+  details summary{cursor:pointer;color:var(--dim);font-size:12px}
+</style>
+</head>
+<body>
+<header>
+  <h1>reddit-alpha <span>— reddit → evidence → ideas</span></h1>
+  <div id="hdr-stats" class="grow"></div>
+  <button id="btn-refresh" title="reload everything">refresh</button>
+</header>
+
+<nav>
+  <button data-tab="flow" class="on">Flow</button>
+  <button data-tab="ideas">Ideas</button>
+  <button data-tab="tickers">Tickers</button>
+  <button data-tab="search">Search</button>
+  <button data-tab="sources">Sources</button>
+  <button data-tab="health">Health</button>
+</nav>
+
+<main>
+  <!-- FLOW -->
+  <section class="panel on" id="tab-flow">
+    <div class="bar">
+      <select id="flow-hours">
+        <option value="6">6h</option>
+        <option value="24" selected>24h</option>
+        <option value="72">72h</option>
+        <option value="168">7d</option>
+        <option value="720">30d</option>
+      </select>
+      <select id="flow-theme"><option value="">all themes</option></select>
+      <select id="flow-sort">
+        <option value="velocity" selected>velocity</option>
+        <option value="quality">quality</option>
+        <option value="score">score</option>
+        <option value="comments">comments</option>
+      </select>
+      <input id="flow-ticker" type="text" placeholder="ticker (optional)" style="width:140px" />
+      <input id="flow-q" type="search" placeholder="grep the window…" />
+      <button id="flow-go" class="primary">load</button>
+      <span id="flow-count" class="muted tiny"></span>
+    </div>
+    <div id="flow-list"></div>
+  </section>
+
+  <!-- IDEAS -->
+  <section class="panel" id="tab-ideas">
+    <div class="bar">
+      <select id="ideas-dir">
+        <option value="">any direction</option>
+        <option value="long">long</option>
+        <option value="short">short</option>
+        <option value="watch">watch</option>
+        <option value="avoid">avoid</option>
+      </select>
+      <select id="ideas-mark">
+        <option value="">everything</option>
+        <option value="bookmarked">★ bookmarked</option>
+        <option value="acting">acting on it</option>
+        <option value="new">unmarked</option>
+        <option value="discard">discarded</option>
+      </select>
+      <select id="ideas-sort" title="order of the list">
+        <option value="newest">newest first</option>
+        <option value="conviction">conviction ↓</option>
+        <option value="conviction-asc">conviction ↑</option>
+        <option value="direction">by direction</option>
+        <option value="marked">recently starred</option>
+        <option value="catalyst">soonest catalyst</option>
+        <option value="oldest">oldest first</option>
+      </select>
+      <button id="ideas-go" class="primary">load</button>
+      <label class="tiny muted" for="gen-hours">read the last</label>
+      <input id="gen-hours" type="text" value="72" style="width:52px"
+             title="how far back to read, in hours" />
+      <label class="tiny muted" for="gen-n">hours, keep up to</label>
+      <input id="gen-n" type="text" value="5" style="width:44px"
+             title="how many new ideas this run may add" />
+      <label class="tiny muted" for="gen-n">new ideas</label>
+      <select id="gen-model" title="model: the only metered part of this app">
+        <option value="glm-5.3-flash" selected>glm-5.3-flash</option>
+        <option value="glm-5.3">glm-5.3 (stronger, 10× price)</option>
+        <option value="deepseek-v4.1-flash">deepseek-v4.1-flash</option>
+      </select>
+      <button id="gen-go">generate more ideas</button>
+      <button id="gen-theme" title="generate for the theme selected in Flow">by theme</button>
+      <span class="muted tiny" id="ideas-note"></span>
+    </div>
+    <div id="ideas-list"></div>
+  </section>
+
+  <!-- TICKERS -->
+  <section class="panel" id="tab-tickers">
+    <div class="bar">
+      <select id="tick-hours">
+        <option value="6">6h</option>
+        <option value="24" selected>24h</option>
+        <option value="72">72h</option>
+        <option value="168">7d</option>
+      </select>
+      <select id="tick-theme"><option value="">all themes</option></select>
+      <button id="tick-go" class="primary">load</button>
+      <span class="muted tiny">counts are mentions in posts and comments; the bar is the change against the prior equal window</span>
+    </div>
+    <table><thead><tr>
+      <th style="width:90px">symbol</th><th style="width:90px">mentions</th>
+      <th style="width:80px">prior</th><th style="width:140px">change</th><th>top document</th>
+    </tr></thead><tbody id="tick-rows"></tbody></table>
+  </section>
+
+  <!-- SEARCH -->
+  <section class="panel" id="tab-search">
+    <div class="bar">
+      <input id="search-q" type="search" placeholder="what did the crowd argue about margins, backlog, guidance…" style="min-width:420px" />
+      <select id="search-mode">
+        <option value="hybrid" selected>hybrid</option>
+        <option value="lexical">lexical</option>
+        <option value="vector">vector</option>
+      </select>
+      <select id="search-hours">
+        <option value="">any time</option>
+        <option value="24">24h</option>
+        <option value="72">72h</option>
+        <option value="168" selected>7d</option>
+        <option value="720">30d</option>
+      </select>
+      <button id="search-go" class="primary">search</button>
+      <span class="muted tiny" id="search-note"></span>
+    </div>
+    <div id="search-list"></div>
+  </section>
+
+  <!-- SOURCES -->
+  <section class="panel" id="tab-sources">
+    <div class="bar">
+      <input id="sub-name" type="text" placeholder="subreddit (no r/)" />
+      <select id="sub-theme">
+        <option value="retail_trading">retail_trading</option>
+        <option value="options">options</option>
+        <option value="value_investing">value_investing</option>
+        <option value="ai_semis">ai_semis</option>
+        <option value="tech_software">tech_software</option>
+        <option value="defence">defence</option>
+        <option value="macro_rates">macro_rates</option>
+        <option value="energy_commodities">energy_commodities</option>
+        <option value="healthcare">healthcare</option>
+        <option value="crypto">crypto</option>
+        <option value="china_em">china_em</option>
+        <option value="quant">quant</option>
+        <option value="other">other</option>
+      </select>
+      <input id="sub-weight" type="text" value="1.0" style="width:60px" title="weight 0.2–1.5" />
+      <button id="sub-add" class="primary">add</button>
+      <span class="grow"></span>
+      <button id="sub-validate">validate all</button>
+      <button id="sub-import">import yaml</button>
+      <button id="sub-export">export yaml</button>
+    </div>
+    <p class="muted tiny">
+      The registry lives in the database; <span class="mono">subreddits.yaml</span> is the seed and the
+      export format. <b>validate</b> probes every sub against the source and switches off the ones that
+      return nothing — that is a statement about the source, not proof the subreddit is dead.
+    </p>
+    <table><thead><tr>
+      <th style="width:36px"></th><th>subreddit</th><th style="width:130px">theme</th>
+      <th style="width:60px">weight</th><th style="width:80px">posts</th><th style="width:80px">comments</th>
+      <th style="width:130px">last run</th><th>note</th><th style="width:40px"></th>
+    </tr></thead><tbody id="subs-rows"></tbody></table>
+  </section>
+
+  <!-- HEALTH -->
+  <section class="panel" id="tab-health">
+    <div class="bar">
+      <input id="crawl-hours" type="text" value="24" style="width:70px" title="window hours" />
+      <select id="crawl-mode">
+        <option value="incremental" selected>incremental</option>
+        <option value="backfill">backfill</option>
+      </select>
+      <input id="crawl-subs" type="text" placeholder="subs (blank = all enabled)" style="width:220px" />
+      <button id="crawl-go" class="primary">crawl</button>
+      <button id="embed-go">embed pending</button>
+      <span class="grow"></span>
+      <span class="muted tiny" id="health-note"></span>
+    </div>
+    <div class="kpis" id="health-kpis"></div>
+    <div class="split">
+      <div>
+        <h3 style="font-size:13px;color:var(--dim);text-transform:uppercase;letter-spacing:.4px">Coverage per subreddit</h3>
+        <table><thead><tr><th>subreddit</th><th>posts</th><th>comments</th><th>newest</th><th>state</th></tr></thead>
+        <tbody id="health-subs"></tbody></table>
+      </div>
+      <div>
+        <h3 style="font-size:13px;color:var(--dim);text-transform:uppercase;letter-spacing:.4px">Runs &amp; integrity</h3>
+        <div id="health-runs" class="card"></div>
+        <div id="health-check" class="card"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<aside id="drawer">
+  <div id="drawer-head">
+    <b id="drawer-title">—</b>
+    <span class="grow"></span>
+    <a id="drawer-link" href="#" target="_blank" rel="noreferrer" class="tiny">reddit ↗</a>
+    <button id="drawer-close">close</button>
+  </div>
+  <div id="drawer-body"></div>
+</aside>
+
+<div id="jobbar">
+  <div class="hdr" id="jobbar-hdr"></div>
+  <div id="jobbar-log"></div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => (s ?? "").toString()
+  .replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+const nf = (n) => (n === null || n === undefined) ? "–" : Number(n).toLocaleString();
+
+async function api(path, opts) {
+  const r = await fetch(path, opts);
+  if (!r.ok) throw new Error((await r.text()).slice(0, 200));
+  return r.json();
+}
+function postJSON(path, body) {
+  return api(path, {method: "POST", headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify(body || {})});
+}
+function fmtAge(ts) {
+  if (!ts) return "–";
+  const s = (Date.now() / 1000) - ts;
+  if (s < 90) return Math.round(s) + "s";
+  if (s < 5400) return Math.round(s / 60) + "m";
+  if (s < 172800) return (s / 3600).toFixed(1) + "h";
+  return Math.round(s / 86400) + "d";
+}
+
+/* ------------------------------------------------------------------ drawer */
+async function openDrawer(title, html, link) {
+  $("drawer-title").textContent = title;
+  $("drawer-body").innerHTML = html;
+  $("drawer-link").href = link || "#";
+  $("drawer").classList.add("on");
+}
+$("drawer-close").onclick = () => $("drawer").classList.remove("on");
+
+async function openThread(postId) {
+  CURRENT_IDEA = null;
+  const d = await api(`/api/thread/${postId}?limit=120`);
+  const p = d.post;
+  if (!p) { openDrawer("not in the store", "<p class='muted'>This post is not in the store yet.</p>"); return; }
+  const comments = (d.comments || []).map(c => `
+    <div class="comment" style="margin-left:${Math.min(6, c.depth || 0) * 14}px">
+      <div class="who">[${nf(c.score)}] u/${esc(c.author)}${c.is_op ? " <span class='ok'>(OP)</span>" : ""}
+        · q ${(c.quality ?? 0).toFixed(2)} · ${esc((c.created_at || "").slice(0, 10))}</div>
+      <div class="body">${esc((c.body || "").slice(0, 2000))}</div>
+    </div>`).join("");
+  const ref = `r/${p.subreddit}/${p.id}`;
+  openDrawer(p.title, `
+    <div class="tiny muted">r/${esc(p.subreddit)} · ${nf(p.score)} points · ${nf(p.num_comments)} comments
+      · flair ${esc(p.flair || "-")} · velocity ${d.velocity ?? "–"}/h · quality ${(p.quality || 0).toFixed(2)}</div>
+    <div class="row" style="margin:8px 0">
+      <button class="primary" onclick="promoteRef('${esc(ref)}', 'promote-out')">
+        does this become an idea?</button>
+      <span class="tiny muted">one model call · reads this thread only</span>
+    </div>
+    <div id="promote-out"></div>
+    <pre>${esc(p.selftext || "(no body — link post: " + (p.url || "") + ")")}</pre>
+    <h4 style="margin:16px 0 4px;font-size:12px;color:var(--dim)">COMMENTS (${(d.comments || []).length})</h4>
+    ${comments || "<p class='muted'>no comments stored</p>"}`,
+    p.permalink ? "https://www.reddit.com" + p.permalink : null);
+}
+
+async function toggleDoc(ref, boxId) {
+  const box = $(boxId);
+  if (!box) return;
+  if (box.dataset.open === "1") { box.innerHTML = ""; box.dataset.open = "0"; return; }
+  box.innerHTML = "<p class='muted tiny'>loading the whole document…</p>";
+  try {
+    const d = await api(`/api/show?ref=${encodeURIComponent(ref)}&comments=0`);
+    let html = "";
+    if (d.parent_comment) {
+      html += `<div class="comment"><div class="who">parent · u/${esc(d.parent_comment.author)}</div>
+        <div class="body">${esc(d.parent_comment.body || "")}</div></div>`;
+    }
+    if (d.comment) {
+      html += `<div class="comment" style="border-color:var(--blue)"><div class="who">
+        ${esc(ref)} · u/${esc(d.comment.author)} · ${nf(d.comment.score)} pts</div>
+        <div class="body">${esc(d.comment.body || "")}</div></div>`;
+    }
+    if (d.post) {
+      html += `<pre>${esc(d.post.selftext || "(link post — " + (d.post.url || "") + ")")}</pre>`;
+    }
+    html += `<div class="row"><button onclick="toggleDoc('${esc(ref)}', '${boxId}')">collapse</button>
+      <button onclick="openDoc('${esc(ref)}')">open in flow view</button>
+      <span class="tiny muted">${nf((d.post && d.post.selftext || "").length)} characters of body,
+        read from the store</span></div>`;
+    box.innerHTML = html;
+    box.dataset.open = "1";
+  } catch (e) {
+    box.innerHTML = `<p class="muted tiny">${esc(e.message || String(e))}</p>`;
+    box.dataset.open = "0";
+  }
+}
+
+let CURRENT_IDEA = null;   // so a document opened from an idea can lead back to it
+
+async function promoteRef(ref, boxId) {
+  const box = $(boxId);
+  if (!box) return;
+  box.innerHTML = `<p class="muted">reading ${esc(ref)} through the model…</p>`;
+  try {
+    const r = await postJSON("/api/promote", {ref});
+    if (r.verdict === "idea") {
+      const i = r.idea;
+      box.innerHTML = `<div class="card" style="border-color:var(--green)">
+        <div class="row"><span class="pill ${esc(i.direction)}">${esc(i.direction)}</span>
+          <span class="num">conviction <b>${i.conviction}</b></span>
+          <span class="grow"></span>
+          <button onclick="openIdea(${r.idea_id})">open idea #${r.idea_id}</button></div>
+        <h3>${esc(i.headline)}</h3><div class="excerpt">${esc(i.thesis)}</div>
+        ${i.catalyst ? `<div class="tiny muted" style="margin-top:6px">catalyst: ${esc(i.catalyst)}</div>` : ""}
+        ${i.invalidation ? `<div class="tiny muted">wrong if: ${esc(i.invalidation)}</div>` : ""}
+        ${i.crowd_edge ? `<div class="tiny muted">crowd edge: ${esc(i.crowd_edge)}</div>` : ""}
+        <div class="tiny muted mono" style="margin-top:6px">${(i.refs || []).map(esc).join("  ")}</div>
+      </div>`;
+      loadIdeas(); refreshHeader();
+    } else if (r.verdict === "duplicate") {
+      box.innerHTML = `<div class="card"><b>already an idea</b> — folded into
+        <a href="#" onclick="openIdea(${r.merged_into});return false">#${r.merged_into}</a>.
+        <div class="tiny muted">${esc(r.why || "")}</div></div>`;
+      loadIdeas();
+    } else {
+      box.innerHTML = `<div class="card"><b>no idea here</b>
+        <div class="tiny muted">${esc(r.why || "the model found no tradeable claim")}</div></div>`;
+    }
+  } catch (e) {
+    box.innerHTML = `<div class="card"><b>failed</b>
+      <div class="tiny muted">${esc(e.message || String(e))}</div></div>`;
+  }
+}
+
+async function openDoc(ref) {
+  const d = await api(`/api/show?ref=${encodeURIComponent(ref)}&comments=6`);
+  const p = d.post;
+  let html = CURRENT_IDEA ? `<div class="row"><button onclick="openIdea(${CURRENT_IDEA})">
+    ← back to idea #${CURRENT_IDEA}</button></div>` : "";
+  html += `<div class="row" style="margin:0 0 10px">
+    <button class="primary" onclick="promoteRef('${esc(ref)}', 'promote-out')">
+      does this become an idea?</button>
+    <span class="tiny muted">one model call · reads this document and its thread</span>
+  </div><div id="promote-out"></div>`;
+  if (p) {
+    html += `<div class="tiny muted">r/${esc(p.subreddit)} · ${nf(p.score)} pts · ${nf(p.num_comments)} comments
+      · ${esc((p.created_at || "").slice(0, 10))}</div>
+      <h3 style="margin:6px 0">${esc(p.title)}</h3>
+      ${d.post_truncated ? `<div class="tiny muted">showing the first ${nf((p.selftext || "").length)} chars of
+        ${nf(d.post_chars)} — the whole document is in the store</div>` : ""}
+      <pre>${esc(p.selftext || "(link post)")}</pre>`;
+  }
+  if (d.parent_comment) {
+    html += `<div class="comment"><div class="who">parent · u/${esc(d.parent_comment.author)}</div>
+      <div class="body">${esc(d.parent_comment.body || "")}</div></div>`;
+  }
+  if (d.comment) {
+    html += `<div class="comment" style="border-color:var(--blue)"><div class="who">
+      ${esc(ref)} · u/${esc(d.comment.author)} · ${nf(d.comment.score)} pts</div>
+      <div class="body">${esc(d.comment.body || "")}</div></div>`;
+  }
+  (d.top_comments || []).forEach(c => {
+    html += `<div class="comment"><div class="who">[${nf(c.score)}] u/${esc(c.author)}</div>
+      <div class="body">${esc((c.body || "").slice(0, 900))}</div></div>`;
+  });
+  openDrawer(ref, html, p && p.permalink ? "https://www.reddit.com" + p.permalink : null);
+}
+
+/* ------------------------------------------------------------------ header */
+async function refreshHeader() {
+  try {
+    const o = await api("/api/overview");
+    const s = o.stats;
+    $("hdr-stats").innerHTML = [
+      `<span><b>${nf(s.posts)}</b> posts</span>`,
+      `<span><b>${nf(s.comments)}</b> comments</span>`,
+      `<span><b>${nf(s.chunks)}</b> chunks</span>`,
+      `<span><b>${nf(s.vectors)}</b> vectors ${(s.vectors_detail.coverage * 100).toFixed(0)}%</span>`,
+      `<span><b>${nf(s.ideas)}</b> ideas${s.ideas_marked ? ` · <b>${nf(s.ideas_marked)}</b> ★` : ""}</span>`,
+      `<span><b>${o.subs.enabled}</b>/${o.subs.total} subs</span>`,
+      `<span class="tiny">${s.db_mb} MB · ${esc(o.now.slice(0, 16).replace("T", " "))}Z</span>`,
+    ].join("");
+    if (o.job && o.job.running) showJob(o.job);
+  } catch (e) { console.warn(e); }
+}
+
+/* ------------------------------------------------------------------ flow */
+async function loadFlow() {
+  const q = $("flow-q").value.trim(), ticker = $("flow-ticker").value.trim();
+  const params = new URLSearchParams({
+    hours: $("flow-hours").value, sort: $("flow-sort").value, limit: q ? 30 : 40,
+  });
+  if ($("flow-theme").value) params.set("theme", $("flow-theme").value);
+  if (ticker) params.set("ticker", ticker);
+  if (q) params.set("q", q);
+  $("flow-list").innerHTML = "<p class='muted'>loading…</p>";
+  const d = await api("/api/flow?" + params);
+  const items = d.items || [];
+  $("flow-count").textContent = `${items.length} item${items.length === 1 ? "" : "s"}`;
+  if (!items.length) { $("flow-list").innerHTML = "<p class='muted'>nothing in this window — crawl first, or widen it</p>"; return; }
+  $("flow-list").innerHTML = items.map(it => {
+    if (it.snippet !== undefined) {   // a search hit
+      return `<div class="card" onclick="openDoc('${it.ref}')">
+        <div class="row"><span class="chip">r/${esc(it.subreddit)}</span>
+          <span class="chip">${esc(it.doc_kind)}</span>
+          <span class="num">score <b>${nf(it.document_score)}</b> · q ${(it.quality ?? 0).toFixed(2)}</span>
+          <span class="grow"></span><span class="num">${esc((it.created_at || "").slice(0, 10))}</span></div>
+        <div class="excerpt">${esc(it.snippet)}</div>
+        <div class="tiny muted mono">${esc(it.ref)}</div></div>`;
+    }
+    return `<div class="card" onclick="openThread('${it.id}')">
+      <div class="row">
+        <span class="chip">r/${esc(it.subreddit)}</span>
+        ${it.flair ? `<span class="chip">${esc(it.flair)}</span>` : ""}
+        <span class="num">▲ <b>${nf(it.score)}</b> · 💬 ${nf(it.num_comments)} · ⚡ <b class="up">${nf(it.velocity)}</b>/h
+          · q ${(it.quality ?? 0).toFixed(2)} · ${fmtAge(it.created_utc)} old</span>
+        <span class="grow"></span><span class="num tiny">u/${esc(it.author)}</span>
+      </div>
+      <h3>${esc(it.title)}</h3></div>`;
+  }).join("");
+}
+
+/* ------------------------------------------------------------------ ideas */
+async function loadIdeas() {
+  const dir = $("ideas-dir").value;
+  const mark = $("ideas-mark").value;
+  const params = new URLSearchParams({limit: 200});
+  if (dir) params.set("direction", dir);
+  if (mark === "bookmarked") params.set("bookmarked", "true");
+  else if (mark) params.set("status", mark);
+  params.set("sort", $("ideas-sort").value || "newest");
+  const d = await api("/api/ideas?" + params);
+  const items = d.items || [];
+  if (!items.length) {
+    $("ideas-list").innerHTML = `<p class="muted">No ideas yet. Crawl some flow, then press
+      <b>generate more ideas</b> — the generator reads the strongest threads in the window and
+      writes ideas with their evidence attached.</p>`;
+    $("ideas-note").textContent = "";
+    return;
+  }
+  const stars = items.filter(it => it.bookmarked).length;
+  $("ideas-note").textContent = `${items.length} shown` +
+    (stars ? ` · ${stars} bookmarked` : "") + " · new runs add to these, never replace them";
+  $("ideas-list").innerHTML = items.map(it => `
+    <div class="card" onclick="openIdea(${it.id})">
+      <div class="row">
+        <span class="pill ${esc(it.direction)}">${esc(it.direction || "?")}</span>
+        <span class="num">conviction <b>${it.conviction ?? "–"}</b></span>
+        ${(it.tickers || []).map(t => `<span class="chip">${esc(t)}</span>`).join("")}
+        <span class="grow"></span>
+        <button class="star ${it.bookmarked ? "on" : ""}" title="${it.bookmarked ? "remove bookmark" : "bookmark this idea"}"
+          onclick="event.stopPropagation(); toggleBookmark(${it.id}, ${it.bookmarked ? "true" : "false"})">★</button>
+        <span class="num tiny">${esc((it.created_at || "").slice(0, 16).replace("T", " "))} · #${it.id}</span>
+      </div>
+      <h3>${esc(it.headline)}</h3>
+      <div class="excerpt">${esc(it.thesis)}</div>
+      <div class="tiny muted mono" style="margin-top:6px">${(it.refs || []).slice(0, 4).map(esc).join("  ")}</div>
+    </div>`).join("");
+}
+
+async function openIdea(id) {
+  const d = await api(`/api/idea/${id}`);
+  CURRENT_IDEA = d.id;
+  const field = (label, v) => v ? `<div style="margin:9px 0"><div class="tiny muted">${label}</div>
+      <div>${esc(v)}</div></div>` : "";
+  const news = (d.news_refs || []).map(n => `<div class="tiny">
+      ${n.discovery ? "⁺ " : "• "}${esc(n.published_at || "")} · ${esc(n.title)}
+      ${n.discovery ? "<span class='muted'>(link not resolvable)</span>"
+                    : `<br><a href="${esc(n.url)}" target="_blank" rel="noreferrer">${esc(n.url)}</a>`}
+    </div>`).join("");
+  const evidence = (d.evidence || []).map((e, i) => `
+    <div class="comment"><div class="who">
+      <a href="#" onclick="toggleDoc('${esc(e.ref)}', 'ev-doc-${i}');return false">${esc(e.ref)}</a>
+      · u/${esc(e.author)} · ${nf(e.score)} pts · ${esc((e.created_at || "").slice(0, 10))}
+      ${e.text_truncated ? `<button style="margin-left:6px"
+        onclick="toggleDoc('${esc(e.ref)}', 'ev-doc-${i}')">read the whole document</button>` : ""}</div>
+      <div class="body">${esc(e.text)}</div>
+      <div id="ev-doc-${i}"></div></div>`).join("");
+  openDrawer(`idea #${d.id}`, `
+    <div class="row"><span class="pill ${esc(d.direction)}">${esc(d.direction)}</span>
+      <span class="num">conviction <b>${d.conviction ?? "–"}</b></span>
+      ${(d.tickers || []).map(t => `<span class="chip">${esc(t)}</span>`).join("")}
+      <span class="grow"></span><span class="num tiny">${esc(d.created_at)}</span></div>
+    <h2 style="font-size:17px;margin:10px 0">${esc(d.headline)}</h2>
+    ${field("THESIS", d.thesis)}
+    ${field("MECHANISM", d.mechanism)}
+    ${field("CATALYST", d.catalyst ? d.catalyst + (d.catalyst_date ? `  (${d.catalyst_date})` : "") : null)}
+    ${field("WRONG IF", d.invalidation)}
+    ${field("WHAT THE CROWD SAW", d.crowd_edge)}
+    ${field("NEW EVIDENCE", d.notes)}
+    <details><summary>crowd metrics</summary><pre>${esc(JSON.stringify(d.metrics || {}, null, 1))}</pre></details>
+    <h4 style="font-size:12px;color:var(--dim);margin:16px 0 4px">EVIDENCE (${(d.evidence || []).length})</h4>
+    ${evidence || "<p class='muted tiny'>no evidence rows</p>"}
+    <h4 style="font-size:12px;color:var(--dim);margin:16px 0 4px">NEWS</h4>
+    ${news || "<p class='muted tiny'>none attached</p>"}
+    <div class="bar" style="margin-top:14px">
+      <button onclick="setIdeaStatus(${d.id}, '${d.marked_at ? "new" : "keep"}')">
+        ${d.marked_at ? "★ remove bookmark" : "★ bookmark"}</button>
+      <button onclick="setIdeaStatus(${d.id}, 'acting')">acting on it</button>
+      <button onclick="setIdeaStatus(${d.id}, 'discard')">discard</button>
+    </div>`);
+}
+async function toggleBookmark(id, marked) {
+  await postJSON(`/api/idea/${id}/status`, {status: marked ? "new" : "keep"});
+  loadIdeas();
+}
+async function setIdeaStatus(id, status) {
+  await api(`/api/idea/${id}/status`, {method: "POST", headers: {"Content-Type": "application/json"},
+                                        body: JSON.stringify({status})});
+  loadIdeas(); $("drawer").classList.remove("on");
+}
+
+/* ------------------------------------------------------------------ tickers */
+async function loadTickers() {
+  const params = new URLSearchParams({hours: $("tick-hours").value, limit: 30});
+  if ($("tick-theme").value) params.set("theme", $("tick-theme").value);
+  const d = await api("/api/tickers?" + params);
+  const items = d.items || [];
+  const max = Math.max(1, ...items.map(i => i.mentions));
+  $("tick-rows").innerHTML = items.map(it => {
+    const cls = it.change === null ? "new" : (it.delta > 0 ? "up" : "down");
+    const label = it.change === null ? "new" : (it.change > 0 ? "+" : "") + (it.change * 100).toFixed(0) + "%";
+    const top = (it.top || [])[0];
+    return `<tr>
+      <td class="mono"><a href="#" onclick="openDoc('${top ? esc(top.ref) : ""}');return false">${esc(it.symbol)}</a></td>
+      <td class="num"><b>${nf(it.mentions)}</b></td>
+      <td class="num">${nf(it.prior)}</td>
+      <td><span class="bar-bg"><span class="bar-fg" style="width:${Math.round(it.mentions / max * 100)}%"></span></span>
+        <span class="num ${cls}"> ${esc(label)}</span></td>
+      <td class="tiny">${top ? `<a href="#" onclick="openDoc('${esc(top.ref)}');return false">${esc(top.ref)}</a>
+        <span class="muted">r/${esc(top.subreddit)} · ${nf(top.score)} pts</span>` : "<span class='muted'>–</span>"}</td>
+    </tr>`;
+  }).join("") || "<tr><td colspan=5 class='muted'>no mentions in this window</td></tr>";
+}
+
+/* ------------------------------------------------------------------ search */
+async function loadSearch() {
+  const q = $("search-q").value.trim();
+  if (!q) return;
+  const params = new URLSearchParams({q, limit: 15, mode: $("search-mode").value});
+  if ($("search-hours").value) params.set("hours", $("search-hours").value);
+  $("search-note").textContent = "searching…";
+  const d = await api("/api/search?" + params);
+  const items = d.items || [];
+  $("search-note").textContent = `${items.length} hits`;
+  $("search-list").innerHTML = items.map((it, i) => `
+    <div class="card" onclick="openDoc('${it.ref}')">
+      <div class="row"><span class="chip">r/${esc(it.subreddit)}</span>
+        <span class="chip">${esc(it.doc_kind)}</span>
+        <span class="num">score <b>${nf(it.document_score)}</b> · q ${(it.quality ?? 0).toFixed(2)}
+        · ${esc((it.created_at || "").slice(0, 10))}</span>
+        <span class="grow"></span>
+        <button title="one model call on this hit alone"
+          onclick="event.stopPropagation(); promoteRef('${esc(it.ref)}', 'promote-hit-${i}')">
+          → idea</button></div>
+      <div class="excerpt">${esc(it.snippet)}</div>
+      <div class="tiny muted mono">${esc(it.ref)}</div>
+      <div id="promote-hit-${i}" onclick="event.stopPropagation()"></div></div>`).join("") ||
+    "<p class='muted'>no hits — try lexical mode, fewer words, or a wider window</p>";
+}
+
+/* ------------------------------------------------------------------ sources */
+let THEMES = [];
+async function loadSubs() {
+  const d = await api("/api/subs");
+  THEMES = d.themes || [];
+  const opts = THEMES.map(t => `<option>${esc(t)}</option>`).join("");
+  $("flow-theme").innerHTML = `<option value="">all themes</option>` + opts;
+  $("tick-theme").innerHTML = `<option value="">all themes</option>` + opts;
+  $("subs-rows").innerHTML = (d.items || []).map(s => `
+    <tr>
+      <td><input type="checkbox" ${s.enabled ? "checked" : ""}
+           onchange="patchSub('${esc(s.name)}', {enabled: this.checked})"></td>
+      <td><a href="https://www.reddit.com/r/${esc(s.name)}" target="_blank" rel="noreferrer">r/${esc(s.name)}</a></td>
+      <td><input type="text" value="${esc(s.theme || "")}" style="width:120px"
+           onchange="patchSub('${esc(s.name)}', {theme: this.value})"></td>
+      <td><input type="text" value="${s.weight}" style="width:52px"
+           onchange="patchSub('${esc(s.name)}', {weight: parseFloat(this.value) || 1})"></td>
+      <td class="num">${nf(s.posts)}</td>
+      <td class="num">${nf(s.comments)}</td>
+      <td class="tiny muted">${esc((s.last_run_at || "–").slice(0, 16).replace("T", " "))}</td>
+      <td class="tiny ${s.last_error ? "err" : "muted"}">${esc(s.last_error || s.notes || "")}</td>
+      <td><button title="remove from the registry" onclick="delSub('${esc(s.name)}')">×</button></td>
+    </tr>`).join("");
+}
+async function patchSub(name, body) {
+  await api("/api/subs/" + encodeURIComponent(name),
+            {method: "PATCH", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+  loadSubs(); refreshHeader();
+}
+async function delSub(name) {
+  if (!confirm(`Remove r/${name} from the registry? Its stored posts stay in the database.`)) return;
+  await api("/api/subs/" + encodeURIComponent(name), {method: "DELETE"});
+  loadSubs(); refreshHeader();
+}
+$("sub-add").onclick = async () => {
+  const name = $("sub-name").value.trim();
+  if (!name) return;
+  await postJSON("/api/subs", {name, theme: $("sub-theme").value,
+                               weight: parseFloat($("sub-weight").value) || 1.0});
+  $("sub-name").value = "";
+  loadSubs(); refreshHeader();
+};
+
+/* ------------------------------------------------------------------ health */
+async function loadHealth() {
+  const [o, subs] = await Promise.all([api("/api/overview"), api("/api/subs")]);
+  const s = o.stats;
+  $("health-kpis").innerHTML = [
+    ["posts", nf(s.posts)], ["comments", nf(s.comments)], ["chunks", nf(s.chunks)],
+    ["vectors", nf(s.vectors)], ["mentions", nf(s.mentions)], ["ideas", nf(s.ideas)],
+    ["posts 24h", nf(s.posts_24h)], ["comments 24h", nf(s.comments_24h)],
+    ["db", s.db_mb + " MB"], ["schema", "v" + s.schema_version],
+  ].map(([l, v]) => `<div class="kpi"><div class="v">${v}</div><div class="l">${l}</div></div>`).join("");
+
+  const errs = new Set((s.last_runs || []).map(r => r.status));
+  $("health-subs").innerHTML = (subs.items || []).filter(x => x.posts || x.comments || x.enabled)
+    .sort((a, b) => (b.posts + b.comments) - (a.posts + a.comments))
+    .map(x => `<tr><td>r/${esc(x.name)}${x.enabled ? "" : " <span class='muted tiny'>(off)</span>"}</td>
+      <td class="num">${nf(x.posts)}</td><td class="num">${nf(x.comments)}</td>
+      <td class="num tiny">${x.recent_posts !== null ? nf(x.recent_posts) : "–"}</td>
+      <td class="tiny ${x.last_error ? "err" : (x.posts ? "ok" : "muted")}">
+        ${esc(x.last_error ? x.last_error.slice(0, 60) : (x.posts ? "ok" : "no data"))}</td></tr>`).join("");
+
+  $("health-runs").innerHTML = `<h4 style="margin:0 0 8px;font-size:12px;color:var(--dim)">RECENT RUNS</h4>` +
+    (s.last_runs || []).map(r => `<div class="tiny mono">${esc((r.started_at || "").slice(0, 19).replace("T", " "))}
+      · ${esc(r.kind)} · <span class="${r.status === "ok" ? "ok" : (r.status === "partial" ? "warn" : "err")}">${esc(r.status || "-")}</span></div>`).join("");
+
+  const chk = o.check;
+  $("health-check").innerHTML = `<h4 style="margin:0 0 8px;font-size:12px;color:var(--dim)">INDEX INTEGRITY</h4>
+    <div class="tiny mono">chunks ${nf(chk.chunks)} · fts rows ${nf(chk.fts_rows)} ·
+      indexed ${nf(chk.chunk_docs.post)} posts / ${nf(chk.chunk_docs.comment)} comments</div>
+    ${(chk.issues || []).map(i => `<div class="tiny err">⚠ ${esc(i)}</div>`).join("") ||
+      `<div class="tiny ok">no structural issues</div>`}
+    <div class="tiny muted" style="margin-top:8px">embed model ${esc(o.embed_model)} ·
+      llm ${o.llm.configured ? esc(o.llm.model) : "not configured"} ·
+      news ${o.news_available ? "available" : "unavailable"}</div>`;
+  $("health-note").textContent = `${s.subreddits_enabled}/${s.subreddits} subs enabled`;
+}
+
+/* ------------------------------------------------------------------ job */
+let jobTimer = null;
+async function showJob(job) {
+  $("jobbar").classList.add("on");
+  const head = job.kind ? `${job.kind} · ${job.running ? "running" : "finished"}` +
+    (job.exit_code !== null ? ` (exit ${job.exit_code})` : "") +
+    (job.seconds ? ` · ${job.seconds}s` : "") : "idle";
+  $("jobbar-hdr").innerHTML = `${head} <button id="jobbar-close" style="float:right">hide</button>`;
+  $("jobbar-log").innerHTML = (job.lines || []).map(l =>
+    `<div class="${/⚠|error|Error|failed/.test(l) ? "err" : (/✦|✓|\+/.test(l) ? "ok" : "")}">${esc(l)}</div>`).join("");
+  const close = $("jobbar-close");
+  if (close) close.onclick = () => { $("jobbar").classList.remove("on"); };
+}
+async function startJob(path, body) {
+  try {
+    const job = await postJSON(path, body || {});
+    showJob(job);
+    clearInterval(jobTimer);
+    jobTimer = setInterval(async () => {
+      const j = await api("/api/job");
+      showJob(j);
+      if (!j.running) {
+        clearInterval(jobTimer);
+        refreshHeader();
+        if (j.kind === "crawl" || j.kind === "embed" || j.kind === "validate") loadSubs();
+        if (j.kind === "generate") loadIdeas();
+      }
+    }, 1500);
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+/* ------------------------------------------------------------------ wiring */
+document.querySelectorAll("nav button").forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll("nav button").forEach(b => b.classList.toggle("on", b === btn));
+    document.querySelectorAll(".panel").forEach(p => p.classList.toggle("on", p.id === "tab-" + btn.dataset.tab));
+    const t = btn.dataset.tab;
+    if (t === "flow") loadFlow();
+    if (t === "ideas") loadIdeas();
+    if (t === "tickers") loadTickers();
+    if (t === "sources") loadSubs();
+    if (t === "health") loadHealth();
+  };
+});
+$("btn-refresh").onclick = () => { refreshHeader(); loadFlow(); };
+$("flow-go").onclick = loadFlow;
+$("flow-q").onkeydown = (e) => { if (e.key === "Enter") loadFlow(); };
+$("flow-hours").onchange = loadFlow;
+$("flow-sort").onchange = loadFlow;
+$("flow-theme").onchange = loadFlow;
+$("ideas-go").onclick = loadIdeas;
+$("ideas-mark").onchange = loadIdeas;
+$("ideas-sort").onchange = loadIdeas;
+$("ideas-dir").onchange = loadIdeas;
+$("tick-go").onclick = loadTickers;
+$("tick-hours").onchange = loadTickers;
+$("search-go").onclick = loadSearch;
+$("search-q").onkeydown = (e) => { if (e.key === "Enter") loadSearch(); };
+$("gen-go").onclick = () => startJob("/api/generate",
+  {hours: parseFloat($("gen-hours").value) || 72,
+   n: parseInt($("gen-n").value, 10) || 5,
+   model: $("gen-model").value || null});
+$("gen-theme").onclick = () => {
+  const theme = $("flow-theme").value;
+  if (!theme) { alert("pick a theme in the Flow filter first"); return; }
+  startJob("/api/generate", {hours: parseFloat($("gen-hours").value) || 72, theme,
+                            n: parseInt($("gen-n").value, 10) || 5,
+                            model: $("gen-model").value || null});
+};
+$("crawl-go").onclick = () => startJob("/api/crawl", {
+  hours: parseFloat($("crawl-hours").value) || 24,
+  mode: $("crawl-mode").value,
+  subs: $("crawl-subs").value.trim() || null,
+  embed: true,
+});
+$("embed-go").onclick = () => startJob("/api/embed");
+$("sub-validate").onclick = () => startJob("/api/validate");
+$("sub-import").onclick = async () => { const r = await postJSON("/api/subs/import"); alert(JSON.stringify(r)); loadSubs(); };
+$("sub-export").onclick = async () => { const r = await postJSON("/api/subs/export"); alert(JSON.stringify(r)); };
+
+/* The page reloads the list after every job, so the controls the reader set are
+   kept in the browser rather than reset to defaults on each pass. */
+const REMEMBERED = ["ideas-sort", "ideas-mark", "ideas-dir", "gen-hours", "gen-n", "gen-model"];
+function rememberControls() {
+  for (const id of REMEMBERED) {
+    const el = $(id);
+    if (!el) continue;
+    const saved = localStorage.getItem("rdx:" + id);
+    if (saved !== null) { el.value = saved; if (el.value !== saved) el.value = el.dataset.fallback || el.value; }
+    el.addEventListener("change", () => localStorage.setItem("rdx:" + id, el.value));
+  }
+}
+rememberControls();
+
+refreshHeader();
+loadFlow();
+setInterval(refreshHeader, 20000);
+</script>
+</body>
+</html>
